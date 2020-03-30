@@ -732,3 +732,6 @@ $string['tab_moodle'] = 'Moodle';
 $string['sso_login'] = 'Login to Office 365';
 $string['other_login'] = 'Login manually';
 $string['course_selector_label'] = "Select existing course";
+
+$string['settings_striptenantfornewusers'] = 'Strip domain from new usernames';
+$string['settings_striptenantfornewusers_details'] = 'If enabled, new accounts created in Moodle will have the same username in Moodle as they do in Office 365, i.e. without the <em>@{$a}</em> part.';
