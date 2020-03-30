@@ -499,6 +499,25 @@ class main {
             'mnethostid' => $CFG->mnet_localhost_id,
         ];
 
+        // Remove the tenant if it matches the current primary tenant
+        // This is completely compatible with the existing fuzzy user matching
+        $config = get_config('local_o365');
+        $switchauthminupnsplit0 = $config->switchauthminupnsplit0;
+        if (empty($switchauthminupnsplit0)) {
+            $switchauthminupnsplit0 = 10;
+        }
+        $syncopts = static::get_sync_options();
+
+        if ($config->striptenantfornewusers && $syncopts['match'] && $syncopts['matchswitchauth']) {
+            $upnsplit = explode('@', $newuser->username);
+            if (!empty($upnsplit[0])
+                && ($upnsplit[1] === $config->aadtenant)
+                && (strlen($upnsplit[0]) > $switchauthminupnsplit0)) {
+
+                $newuser->username = $upnsplit[0];
+            }
+        }
+
         $newuser = static::apply_configured_fieldmap($aaddata, $newuser, 'create');
 
         $password = null;

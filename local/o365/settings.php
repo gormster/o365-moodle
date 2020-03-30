@@ -206,6 +206,11 @@ if ($hassiteconfig) {
         $default = [];
         $settings->add(new \local_o365\adminsetting\usersynccreationrestriction($key, $label, $desc, $default));
 
+        $aadtenant = get_config('local_o365', 'aadtenant') ?? 'contoso.onmicrosoft.com';
+        $label = new lang_string('settings_striptenantfornewusers', 'local_o365');
+        $desc = new lang_string('settings_striptenantfornewusers_details', 'local_o365', $aadtenant);
+        $settings->add(new admin_setting_configcheckbox('local_o365/striptenantfornewusers', $label, $desc, '0'));
+
         $label = new lang_string('settings_fieldmap', 'local_o365');
         $desc = new lang_string('settings_fieldmap_details', 'local_o365');
         $default = \local_o365\adminsetting\usersyncfieldmap::defaultmap();
