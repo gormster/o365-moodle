@@ -260,11 +260,11 @@ class local_o365_usersync_testcase extends \advanced_testcase {
                 'country' => 'CA',
                 'department' => 'Dev',
                 'givenName' => 'Test',
-                'userPrincipalName' => 'testuser2@example.onmicrosoft.com',
-                'mail' => 'testuser2@example.onmicrosoft.com',
+                'userPrincipalName' => 'eightchr@example.onmicrosoft.com',
+                'mail' => 'eightchr@example.onmicrosoft.com',
                 'surname' => 'User2',
             ],
-            'testuser2'
+            'eightchr'
         ];
 
         $tests['usernametooshort'] = [
@@ -275,11 +275,11 @@ class local_o365_usersync_testcase extends \advanced_testcase {
                 'id' => '00000000-0000-0000-0000-000000000003',
                 'department' => 'Dev',
                 'givenName' => 'Test',
-                'userPrincipalName' => 'short@example.onmicrosoft.com',
-                'mail' => 'short@example.onmicrosoft.com',
+                'userPrincipalName' => 'shortun@example.onmicrosoft.com',
+                'mail' => 'shortun@example.onmicrosoft.com',
                 'surname' => 'User3',
             ],
-            'short@example.onmicrosoft.com'
+            'shortun@example.onmicrosoft.com'
         ];
 
         $tests['differenttenant'] = [
