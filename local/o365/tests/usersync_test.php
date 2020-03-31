@@ -231,6 +231,74 @@ class local_o365_usersync_testcase extends \advanced_testcase {
         return $tests;
     }
 
+    public function dataprovider_create_user_strip_tenant() {
+        $tests = [];
+
+        $tests['fulldata'] = [
+            [
+                'odata.type' => 'Microsoft.WindowsAzure.ActiveDirectory.User',
+                'objectType' => 'User',
+                'objectId' => '00000000-0000-0000-0000-000000000001',
+                'id' => '00000000-0000-0000-0000-000000000001',
+                'city' => 'Toronto',
+                'country' => 'CA',
+                'department' => 'Dev',
+                'givenName' => 'Test',
+                'userPrincipalName' => 'testuser1@example.onmicrosoft.com',
+                'mail' => 'testuser1@example.onmicrosoft.com',
+                'surname' => 'User1',
+            ],
+            'testuser1'
+        ];
+
+        $tests['nocity'] = [
+            [
+                'odata.type' => 'Microsoft.WindowsAzure.ActiveDirectory.User',
+                'objectType' => 'User',
+                'objectId' => '00000000-0000-0000-0000-000000000002',
+                'id' => '00000000-0000-0000-0000-000000000002',
+                'country' => 'CA',
+                'department' => 'Dev',
+                'givenName' => 'Test',
+                'userPrincipalName' => 'testuser2@example.onmicrosoft.com',
+                'mail' => 'testuser2@example.onmicrosoft.com',
+                'surname' => 'User2',
+            ],
+            'testuser2'
+        ];
+
+        $tests['usernametooshort'] = [
+            [
+                'odata.type' => 'Microsoft.WindowsAzure.ActiveDirectory.User',
+                'objectType' => 'User',
+                'objectId' => '00000000-0000-0000-0000-000000000003',
+                'id' => '00000000-0000-0000-0000-000000000003',
+                'department' => 'Dev',
+                'givenName' => 'Test',
+                'userPrincipalName' => 'short@example.onmicrosoft.com',
+                'mail' => 'short@example.onmicrosoft.com',
+                'surname' => 'User3',
+            ],
+            'short@example.onmicrosoft.com'
+        ];
+
+        $tests['differenttenant'] = [
+            [
+                'odata.type' => 'Microsoft.WindowsAzure.ActiveDirectory.User',
+                'objectType' => 'User',
+                'objectId' => '00000000-0000-0000-0000-000000000004',
+                'id' => '00000000-0000-0000-0000-000000000004',
+                'givenName' => 'Test',
+                'userPrincipalName' => 'testuser4@other-example.onmicrosoft.com',
+                'mail' => 'testuser4@other-example.onmicrosoft.com',
+                'surname' => 'User4',
+            ],
+            'testuser4@other-example.onmicrosoft.com'
+        ];
+
+        return $tests;
+    }
+
     /**
      * Test create_user_from_aaddata method.
      *
@@ -252,6 +320,31 @@ class local_o365_usersync_testcase extends \advanced_testcase {
         foreach ($expecteduser as $k => $v) {
             $this->assertEquals($v, $createduser->$k);
         }
+    }
+
+    /**
+     * Test create_user_from_aaddata method when striptenantfornewusers is set.
+     *
+     * @dataProvider dataprovider_create_user_strip_tenant
+     * @param array $aaddata The Azure AD user data to create the user from.
+     * @param string $expectedusername The expected username of the created user.
+     */
+    public function test_create_user_strip_tenant($aaddata, $expectedusername) {
+        global $DB;
+        set_config('aadtenant', 'example.onmicrosoft.com', 'local_o365');
+        set_config('aadsync', 'match,matchswitchauth', 'local_o365');
+        set_config('striptenantfornewusers', '1', 'local_o365');
+        set_config('switchauthminupnsplit0', '8', 'local_o365');
+
+        $httpclient = new \local_o365\tests\mockhttpclient();
+        $clientdata = $this->get_mock_clientdata();
+        $apiclient = new \local_o365\feature\usersync\main($clientdata, $httpclient);
+        $apiclient->create_user_from_aaddata($aaddata);
+
+        $userparams = ['auth' => 'oidc', 'email' => $aaddata['mail']];
+        $this->assertTrue($DB->record_exists('user', $userparams));
+        $createdusername = $DB->get_field('user', 'username', $userparams);
+        $this->assertEquals($createdusername, $expectedusername);
     }
 
     /**
