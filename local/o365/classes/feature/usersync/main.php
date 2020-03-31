@@ -508,7 +508,7 @@ class main {
         }
         $syncopts = static::get_sync_options();
 
-        if ($config->striptenantfornewusers && $syncopts['match'] && $syncopts['matchswitchauth']) {
+        if ($config->striptenantfornewusers && isset($syncopts['match']) && isset($syncopts['matchswitchauth'])) {
             $upnsplit = explode('@', $newuser->username);
             if (!empty($upnsplit[0])
                 && ($upnsplit[1] === $config->aadtenant)
