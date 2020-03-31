@@ -512,7 +512,7 @@ class main {
             $upnsplit = explode('@', $newuser->username);
             if (!empty($upnsplit[0])
                 && ($upnsplit[1] === $config->aadtenant)
-                && (strlen($upnsplit[0]) > $switchauthminupnsplit0)) {
+                && (strlen($upnsplit[0]) >= $switchauthminupnsplit0)) {
 
                 $newuser->username = $upnsplit[0];
             }
