@@ -403,6 +403,29 @@ class authcode extends \auth_oidc\loginflow\base {
     }
 
     /**
+     * Sync the user from AAD to create them before logging them in, if enabled
+     * @param  \auth_oidc\jwt   $idtoken  A JWT for the user
+     * @return bool             If the user was synced over
+     */
+    protected function sync_on_creation($idtoken) {
+        global $DB;
+        $o365installed = $DB->get_record('config_plugins', ['plugin' => 'local_o365', 'name' => 'version']);
+        if (empty($o365installed)) {
+            return false;
+        }
+
+        $syncoptions = \local_o365\feature\usersync\main::get_sync_options();
+
+        if (!isset($syncoptions['create'])) {
+            return false;
+        }
+
+        $usersync = new \local_o365\feature\usersync\main();
+        $aaduserdata = $usersync->get_user($idtoken->claim('oid'));
+        return $usersync->sync_users([$aaduserdata]);
+    }
+
+    /**
      * Handle a login event.
      *
      * @param string $oidcuniqid A unique identifier for the user.
@@ -440,6 +463,9 @@ class authcode extends \auth_oidc\loginflow\base {
             // Possibilities:
             //     - Matched user.
             //     - New user (maybe create).
+
+            // Let O365 sync the user over first
+            $this->sync_on_creation($idtoken);
 
             // Generate a Moodle username.
             // Use 'upn' if available for username (Azure-specific), or fall back to lower-case oidcuniqid.
