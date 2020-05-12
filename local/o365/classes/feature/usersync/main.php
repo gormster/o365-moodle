@@ -29,6 +29,7 @@ use \local_o365\httpclient;
 class main {
     protected $clientdata = null;
     protected $httpclient = null;
+    protected $debug = true;
 
     /**
      * Constructor
@@ -36,7 +37,7 @@ class main {
      * @param clientdata $clientdata The client data to use for API construction.
      * @param httpclient $httpclient The HTTP client to use for API construction.
      */
-    public function __construct(clientdata $clientdata = null, httpclient $httpclient = null) {
+    public function __construct(clientdata $clientdata = null, httpclient $httpclient = null, $debug = true) {
         $this->clientdata = (!empty($clientdata))
             ? $clientdata
             : clientdata::instance_from_oidc();
@@ -44,6 +45,8 @@ class main {
         $this->httpclient = (!empty($httpclient))
             ? $httpclient
             : new httpclient();
+
+        $this->debug = $debug && !PHPUNIT_TEST;
     }
 
     /**
@@ -629,8 +632,8 @@ class main {
      *
      * @param string $msg The message.
      */
-    public static function mtrace($msg) {
-        if (!PHPUNIT_TEST) {
+    public function mtrace($msg) {
+        if ($this->debug) {
             mtrace('......... '.$msg);
         }
     }

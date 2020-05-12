@@ -420,7 +420,8 @@ class authcode extends \auth_oidc\loginflow\base {
             return false;
         }
 
-        $usersync = new \local_o365\feature\usersync\main();
+        // Initialise the sync object with debugging turned off so we don't get mtraces all over our login screen
+        $usersync = new \local_o365\feature\usersync\main(null, null, false);
         $aaduserdata = $usersync->get_user($idtoken->claim('oid'));
         return $usersync->sync_users($aaduserdata);
     }
