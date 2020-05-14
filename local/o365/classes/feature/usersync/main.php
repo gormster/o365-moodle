@@ -738,29 +738,29 @@ class main {
 
             if (\local_o365\rest\unified::is_configured()) {
                 $userobjectid = $user['id'];
+                $userisdeleted = !empty($user['@removed']);
             } else {
                 $userobjectid = $user['objectId'];
+                $userisdeleted = isset($user['aad.isDeleted']) && ($user['aad.isDeleted'] == '1');
             }
 
-            if (isset($user['aad.isDeleted']) && $user['aad.isDeleted'] == '1') {
+            if ($userisdeleted) {
                 if (isset($aadsync['delete'])) {
+                    require_once($CFG->dirroot.'/user/lib.php');
+
                     // Check for synced user.
                     $sql = 'SELECT u.*
                               FROM {user} u
                               JOIN {local_o365_objects} obj ON obj.type = \'user\' AND obj.moodleid = u.id
-                              JOIN {auth_oidc_token} tok ON tok.userid = u.id
-                             WHERE u.username = ?
-                                   AND u.mnethostid = ?
+                             WHERE obj.objectid = ?
                                    AND u.deleted = ?
                                    AND u.suspended = ?
                                    AND u.auth = ?';
                     $params = [
-                        trim(\core_text::strtolower($user['userPrincipalName'])),
-                        $CFG->mnet_localhost_id,
+                        $userobjectid,
                         '0',
                         '0',
-                        'oidc',
-                        time()
+                        'oidc'
                     ];
                     $synceduser = $DB->get_record_sql($sql, $params);
                     if (!empty($synceduser)) {
