@@ -727,11 +727,12 @@ class main {
 
             if ($userisdeleted) {
                 if (isset($aadsync['delete'])) {
+                    require_once($CFG->dirroot.'/user/lib.php');
+
                     // Check for synced user.
                     $sql = 'SELECT u.*
                               FROM {user} u
                               JOIN {local_o365_objects} obj ON obj.type = \'user\' AND obj.moodleid = u.id
-                              JOIN {auth_oidc_token} tok ON tok.userid = u.id
                              WHERE obj.objectid = ?
                                    AND u.deleted = ?
                                    AND u.suspended = ?
