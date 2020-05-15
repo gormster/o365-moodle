@@ -656,6 +656,9 @@ class main {
         $usernames = [];
         $upns = [];
         foreach ($aadusers as $i => $user) {
+            if (empty($user['userPrincipalName'])) {
+                continue;
+            }
             $upnlower = \core_text::strtolower($user['userPrincipalName']);
             $aadusers[$i]['upnlower'] = $upnlower;
 
