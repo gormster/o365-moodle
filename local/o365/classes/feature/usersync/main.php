@@ -672,49 +672,56 @@ class main {
             }
         }
 
-        list($usernamesql, $usernameparams) = $DB->get_in_or_equal($usernames);
-        $sql = 'SELECT u.username,
-                       u.id as muserid,
-                       u.auth,
-                       tok.id as tokid,
-                       conn.id as existingconnectionid,
-                       assign.assigned assigned,
-                       assign.photoid photoid,
-                       assign.photoupdated photoupdated,
-                       obj.id AS objrecid
-                  FROM {user} u
-             LEFT JOIN {auth_oidc_token} tok ON tok.userid = u.id
-             LEFT JOIN {local_o365_connections} conn ON conn.muserid = u.id
-             LEFT JOIN {local_o365_appassign} assign ON assign.muserid = u.id
-             LEFT JOIN {local_o365_objects} obj ON obj.type = ? AND obj.moodleid = u.id
-                 WHERE u.username '.$usernamesql.' AND u.mnethostid = ? AND u.deleted = ?
-              ORDER BY CONCAT(u.username, \'~\')'; // Sort john.smith@example.org before john.smith.
-        $params = array_merge(['user'], $usernameparams, [$CFG->mnet_localhost_id, '0']);
-        $existingusers = $DB->get_records_sql($sql, $params);
+        // If the delta only contains users who have been removed, we might not have any users with a UPN field
+        if (!empty($usernames) && !empty($upns)) {
+            list($usernamesql, $usernameparams) = $DB->get_in_or_equal($usernames);
+            $sql = 'SELECT u.username,
+                           u.id as muserid,
+                           u.auth,
+                           tok.id as tokid,
+                           conn.id as existingconnectionid,
+                           assign.assigned assigned,
+                           assign.photoid photoid,
+                           assign.photoupdated photoupdated,
+                           obj.id AS objrecid
+                      FROM {user} u
+                 LEFT JOIN {auth_oidc_token} tok ON tok.userid = u.id
+                 LEFT JOIN {local_o365_connections} conn ON conn.muserid = u.id
+                 LEFT JOIN {local_o365_appassign} assign ON assign.muserid = u.id
+                 LEFT JOIN {local_o365_objects} obj ON obj.type = ? AND obj.moodleid = u.id
+                     WHERE u.username '.$usernamesql.' AND u.mnethostid = ? AND u.deleted = ?
+                  ORDER BY CONCAT(u.username, \'~\')'; // Sort john.smith@example.org before john.smith.
+            $params = array_merge(['user'], $usernameparams, [$CFG->mnet_localhost_id, '0']);
+            $existingusers = $DB->get_records_sql($sql, $params);
+        
+            // Fetch linked AAD user accounts.
+            list($upnsql, $upnparams) = $DB->get_in_or_equal($upns);
+            list($usernamesql, $usernameparams) = $DB->get_in_or_equal($usernames, SQL_PARAMS_QM, 'param', false);
+            $sql = 'SELECT tok.oidcusername,
+                           u.username as username,
+                           u.id as muserid,
+                           u.auth,
+                           tok.id as tokid,
+                           conn.id as existingconnectionid,
+                           assign.assigned assigned,
+                           assign.photoid photoid,
+                           assign.photoupdated photoupdated,
+                           obj.id AS objrecid
+                      FROM {user} u
+                 LEFT JOIN {auth_oidc_token} tok ON tok.userid = u.id
+                 LEFT JOIN {local_o365_connections} conn ON conn.muserid = u.id
+                 LEFT JOIN {local_o365_appassign} assign ON assign.muserid = u.id
+                 LEFT JOIN {local_o365_objects} obj ON obj.type = ? AND obj.moodleid = u.id
+                     WHERE tok.oidcusername '.$upnsql.' AND u.username '.$usernamesql.' AND u.mnethostid = ? AND u.deleted = ? ';
+            $params = array_merge(['user'], $upnparams, $usernameparams, [$CFG->mnet_localhost_id, '0']);
+            $linkedexistingusers = $DB->get_records_sql($sql, $params);
 
-        // Fetch linked AAD user accounts.
-        list($upnsql, $upnparams) = $DB->get_in_or_equal($upns);
-        list($usernamesql, $usernameparams) = $DB->get_in_or_equal($usernames, SQL_PARAMS_QM, 'param', false);
-        $sql = 'SELECT tok.oidcusername,
-                       u.username as username,
-                       u.id as muserid,
-                       u.auth,
-                       tok.id as tokid,
-                       conn.id as existingconnectionid,
-                       assign.assigned assigned,
-                       assign.photoid photoid,
-                       assign.photoupdated photoupdated,
-                       obj.id AS objrecid
-                  FROM {user} u
-             LEFT JOIN {auth_oidc_token} tok ON tok.userid = u.id
-             LEFT JOIN {local_o365_connections} conn ON conn.muserid = u.id
-             LEFT JOIN {local_o365_appassign} assign ON assign.muserid = u.id
-             LEFT JOIN {local_o365_objects} obj ON obj.type = ? AND obj.moodleid = u.id
-                 WHERE tok.oidcusername '.$upnsql.' AND u.username '.$usernamesql.' AND u.mnethostid = ? AND u.deleted = ? ';
-        $params = array_merge(['user'], $upnparams, $usernameparams, [$CFG->mnet_localhost_id, '0']);
-        $linkedexistingusers = $DB->get_records_sql($sql, $params);
-
-        $existingusers = array_merge($existingusers, $linkedexistingusers);
+            $existingusers = array_merge($existingusers, $linkedexistingusers);
+        } else {
+            // This array will not contain users who have been removed from AAD,
+            // as we do not get their UPN in the delta object.
+            $existingusers = [];
+        }
 
         foreach ($aadusers as $user) {
             $this->mtrace(' ');
