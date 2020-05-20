@@ -743,9 +743,6 @@ class main {
         }
 
         foreach ($aadusers as $user) {
-            $this->mtrace(' ');
-            $this->mtrace('Syncing user '.$user['upnlower']);
-
             if (\local_o365\rest\unified::is_configured()) {
                 $userobjectid = $user['id'];
                 $userisdeleted = !empty($user['@removed']);
@@ -753,6 +750,9 @@ class main {
                 $userobjectid = $user['objectId'];
                 $userisdeleted = isset($user['aad.isDeleted']) && ($user['aad.isDeleted'] == '1');
             }
+
+            $this->mtrace(' ');
+            $this->mtrace('Syncing user '.$user['upnlower'] ?? $userobjectid);
 
             if ($userisdeleted) {
                 if (isset($aadsync['delete'])) {
