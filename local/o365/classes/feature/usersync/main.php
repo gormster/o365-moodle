@@ -733,7 +733,7 @@ class main {
             }
 
             $this->mtrace(' ');
-            $this->mtrace('Syncing user '.$user['upnlower'] ?? $userobjectid);
+            $this->mtrace('Syncing user ' . ($user['upnlower'] ?? $userobjectid));
 
             if ($userisdeleted) {
                 if (isset($aadsync['delete'])) {
